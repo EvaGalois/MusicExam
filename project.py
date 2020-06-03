@@ -34,7 +34,7 @@ class QTitleLabel(QLabel):
     """
     def __init__(self, *args):
         super(QTitleLabel, self).__init__(*args)
-        self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.setFixedHeight(30)
 
 class musicPlayer(QtWidgets.QMainWindow):
@@ -42,7 +42,7 @@ class musicPlayer(QtWidgets.QMainWindow):
         super(musicPlayer, self).__init__(*args, **kwargs)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setWindowOpacity(0.9)
+        self.setWindowOpacity(0.5)
         self.setMouseTracking(True)
         self.setupUI()
 
@@ -51,9 +51,10 @@ class musicPlayer(QtWidgets.QMainWindow):
         self._padding = 0
         self.setWindowTitle('音乐音频处理')
         self.setWindowIcon(QtGui.QIcon('web.png'))
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(800, 1200)
         # self.setFixedSize(self.width(), self.height())
-        self.setStyleSheet('background-color: #000; border-radius: 10;')
+        # self.setStyleSheet('.QWidget { background: black; border-radius: 5;}')
+        self.setStyleSheet('background: black; border-radius: 5;')
         # self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.initTitleLabel()
         self.player = QMediaPlayer()
@@ -97,6 +98,7 @@ class musicPlayer(QtWidgets.QMainWindow):
 
     def widgets(self):
         self.close_btn = QPushButton(self)              # 创建一个按钮
+        self.close_btn.setCheckable(True)
         # self.close_btn.setText('X')                     # 按钮显示显示文本
         # self.close_btn.resize(20, 20)
         self.close_btn.setMaximumSize(12, 12)
@@ -108,14 +110,14 @@ class musicPlayer(QtWidgets.QMainWindow):
         # self.max_btn.resize(20, 20)
         self.max_btn.setMaximumSize(12, 12)
         self.max_btn.setStyleSheet("background-color: rgb(28, 255, 3); border-radius: 6;")
-        self.close_btn.move(24, 10)
+        self.max_btn.move(24, 10)
 
         self.min_btn = QPushButton(self)
         # self.min_btn.setText('一')
         # self.min_btn.resize(20, 20)
         self.min_btn.setMaximumSize(12, 12)
         self.min_btn.setStyleSheet("background-color: rgb(255, 243, 75); border-radius: 6;")
-        self.close_btn.move(36, 10)
+        self.min_btn.move(36, 10)
 
         self.titlelabel = QLabel('音乐音频处理')
         self.titlelabel.setStyle(QStyleFactory.create('Fusion'))
@@ -188,7 +190,7 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.canvas.setMinimumSize(200, 200)
 
     def Event(self):
-        self.close_btn.clicked.connect(self.close)              # 关闭按钮被点击，调用关闭函数
+        self.close_btn.clicked.connect(lambda:self.close())              # 关闭按钮被点击，调用关闭函数
         self.max_btn.clicked.connect(self.max_normal)           #最大化按钮被点击，调用最大化_恢复函数
         self.min_btn.clicked.connect(self.showMinimized)        # 最小化按钮被点击，调用最小化函数
 
@@ -213,46 +215,47 @@ class musicPlayer(QtWidgets.QMainWindow):
 
     def layouts(self):
 
-        titlebar = QtWidgets.QWidget()
-        TBox = QtWidgets.QHBoxLayout()
+        self.titlebar = QtWidgets.QWidget()
+        self.TBox = QtWidgets.QHBoxLayout()
         # TBox.addWidget(cmmbar)
-        TBox.addWidget(self.close_btn)
-        TBox.addWidget(self.min_btn)
-        TBox.addWidget(self.max_btn)
-        TBox.addWidget(self.placeholder)
-        TBox.addWidget(self.titlelabel, Qt.AlignHCenter)
-        TBox.setContentsMargins(2, 0, 2, 0)
-        titlebar.setLayout(TBox)
+        self.TBox.addWidget(self.close_btn)
+        self.TBox.addWidget(self.min_btn)
+        self.TBox.addWidget(self.max_btn)
+        self.TBox.addWidget(self.placeholder)
+        # self.TBox.addWidget(self.titlelabel, Qt.AlignRight)
+        self.TBox.addWidget(self.titlelabel)
+        self.TBox.setContentsMargins(2, 0, 2, 0)
+        self.titlebar.setLayout(self.TBox)
 
-        bottom_widget = QtWidgets.QWidget()
-        r_Hbox = QtWidgets.QHBoxLayout()
-        r_Hbox.addWidget(self.label1)
-        r_Hbox.addWidget(self.label2)
-        r_Hbox.addWidget(self.preview_button)
-        r_Hbox.addWidget(self.next_button)
-        r_Hbox.addWidget(self.cmb)
-        r_Hbox.addWidget(self.open_button)
-        r_Hbox.addWidget(self.mute_button)
-        r_Hbox.addWidget(self.play_button)
-        r_Hbox.setContentsMargins(5, 5, 5, 5)
-        bottom_widget.setLayout(r_Hbox)
+        self.bottom_widget = QtWidgets.QWidget()
+        self.r_Hbox = QtWidgets.QHBoxLayout()
+        self.r_Hbox.addWidget(self.label1)
+        self.r_Hbox.addWidget(self.label2)
+        self.r_Hbox.addWidget(self.preview_button)
+        self.r_Hbox.addWidget(self.next_button)
+        self.r_Hbox.addWidget(self.cmb)
+        self.r_Hbox.addWidget(self.open_button)
+        self.r_Hbox.addWidget(self.mute_button)
+        self.r_Hbox.addWidget(self.play_button)
+        self.r_Hbox.setContentsMargins(5, 5, 5, 5)
+        self.bottom_widget.setLayout(self.r_Hbox)
 
-        top_widget = QtWidgets.QWidget()
-        l_Vbox = QtWidgets.QVBoxLayout()
-        l_Vbox.addWidget(self.qlist)
-        l_Vbox.addWidget(self.canvas)
-        l_Vbox.addWidget(self.slider)
-        l_Vbox.setContentsMargins(0, 0, 0, 0)
-        top_widget.setLayout(l_Vbox)
+        self.top_widget = QtWidgets.QWidget()
+        self.l_Vbox = QtWidgets.QVBoxLayout()
+        self.l_Vbox.addWidget(self.qlist)
+        self.l_Vbox.addWidget(self.canvas)
+        self.l_Vbox.addWidget(self.slider)
+        self.l_Vbox.setContentsMargins(0, 0, 0, 0)
+        self.top_widget.setLayout(self.l_Vbox)
 
-        widget = QtWidgets.QWidget()
-        Box = QtWidgets.QVBoxLayout()
-        Box.addWidget(titlebar)
-        Box.addWidget(top_widget)
-        Box.addWidget(bottom_widget)
-        widget.setLayout(Box)
+        self.widget = QtWidgets.QWidget()
+        self.Box = QtWidgets.QVBoxLayout()
+        self.Box.addWidget(self.titlebar)
+        self.Box.addWidget(self.top_widget)
+        self.Box.addWidget(self.bottom_widget)
+        self.widget.setLayout(self.Box)
 
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.widget)
 
     def menubar(self):
         self.menubar = self.menuBar()
@@ -276,11 +279,13 @@ class musicPlayer(QtWidgets.QMainWindow):
             pass
         # 重新调整边界范围以备实现鼠标拖放缩放窗口大小，采用三个列表生成式生成三个列表
         self._right_rect = [QPoint(x, y) for x in range(self.width() - self._padding, self.width() + 1)
-                           for y in range(1, self.height() - self._padding)]
+        for y in range(1, self.height() - self._padding)]
         self._bottom_rect = [QPoint(x, y) for x in range(1, self.width() - self._padding)
-                         for y in range(self.height() - self._padding, self.height() + 1)]
+        for y in range(self.height() - self._padding, self.height() + 1)]
         self._corner_rect = [QPoint(x, y) for x in range(self.width() - self._padding, self.width() + 1)
-                                    for y in range(self.height() - self._padding, self.height() + 1)]
+        for y in range(self.height() - self._padding, self.height() + 1)]
+        # autoplaceholder = int(self.geometry().x() / 2)
+        # self.placeholder.setMaximumSize(autoplaceholder-200, 20)
 
     #5. 判断最大化，还是窗口化
     def max_normal(self):
@@ -510,22 +515,88 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.is_switching = False
 
     def waveplot(self):
+        self.axset()
         self.audio_signal, self.sample_rate = librosa.load(self.cur_playing_song, offset=40)
         self.re_sample = 100
         self.re_audio = librosa.resample(self.audio_signal, self.sample_rate, self.re_sample)
+        plt.subplot(5,1,1)
         librosa.display.waveplot(self.re_audio, self.re_sample, linewidth=.1, max_sr=10, color='#8ef')
-        plt.xticks(size = 8)
-        plt.yticks(size = 8)
+        plt.title('signal')
+        plt.xlabel('Time')
+        plt.ylabel('Amplitude')
+
+        self.axset()
+
+        plt.subplot(5,1,2)
+        self.chromaCqt()
+        librosa.display.specshow(self.CQT, x_axis='time', y_axis='cqt_note')
+        # plt.colorbar(format='%+2.0f dB')
+        plt.title('Constant-Q power spectrogram (note)')
+        plt.set_cmap('bone')
+
+        self.axset()
+
+
+        plt.subplot(5,1,3)
+
+        librosa.display.specshow(self.chroma_cqt, y_axis='chroma', x_axis='time')
+        plt.title('chroma_cqt')
+        # plt.colorbar()
+        plt.tight_layout()
+
+        self.axset()
+
+        plt.subplot(5,1,4)
+        plt.bar(np.arange(len(self.chroma_cqt_bar_normalized)), self.chroma_cqt_bar_normalized, color='#234', alpha=1)
+        plt.xticks(range(12), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'])
+        plt.xlabel('Pitch class')
+        plt.yticks(np.arange(11)/10)
+        plt.ylabel('Relative energy')
+        plt.title('PCP feature vector extracted')
+
+        self.axset()
+
+        plt.subplot(5,1,5)
+        S = librosa.feature.melspectrogram(y=self.audio_signal, sr=self.sample_rate, n_mels=12, fmax=8000)
+        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(S))
+        librosa.display.specshow(mfccs, x_axis='time', y_axis='mel')
+        plt.title('MFCC')
+        plt.tight_layout()
+
+        self.axset()
+
+
+
+
+        self.canvas.draw()
+
+    def waveplotclean(self):
+        plt.cla()
+
+    def axset(self):
+        plt.rc('font', size=5)
+        plt.xticks(size = 1)
+        plt.yticks(size = 1)
+
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
         ax.spines['bottom'].set_visible(False)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
-        self.canvas.draw()
+    def chromaCqt(self):
+        self.CQT = librosa.amplitude_to_db(np.abs(librosa.cqt(self.audio_signal, self.sample_rate)), ref=np.max)
 
-    def waveplotclean(self):
-        plt.cla()
+        self.chroma_cqt = librosa.feature.chroma_cqt(y=self.audio_signal, sr=self.sample_rate, C=None, hop_length=512, fmin=None, #~=32.7 'C1' \
+            norm=np.inf, threshold=0.0, tuning=None, n_chroma=12, n_octaves=7,
+            window=scipy.signal.windows.hamming(1),
+            bins_per_octave=None,
+            cqt_mode='full')
+
+        # print(self.chroma_cqt.shape)
+
+        self.chroma_cqt_bar = self.chroma_cqt.mean(axis=1)
+        self.chroma_cqt_bar_normalized = self.chroma_cqt_bar * (1 / max(self.chroma_cqt_bar))
 
 
 if __name__ == '__main__':
