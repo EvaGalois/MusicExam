@@ -6,6 +6,7 @@ import scipy.fftpack
 import sys
 import os
 import time
+import math
 import random
 import configparser
 from PyQt5.Qt import *
@@ -25,6 +26,7 @@ matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as mg
 
 import traceback
 
@@ -43,15 +45,18 @@ class musicPlayer(QtWidgets.QMainWindow):
         self._padding = 0
         self.setWindowTitle('音乐音频处理')
         self.setWindowIcon(QtGui.QIcon('web.png'))
-        self.setMinimumSize(1800, 1200)
+        self.setMinimumSize(1600, 1200)
         # self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.player = QMediaPlayer()
         self.player.setVolume(20.0)
         self.songs_list = []
+        self.songs_list2 = self.songs_list
         self.song_formats = ['mp3', 'm4a', 'flac', 'wav', 'ogg']
         self.cur_path = os.path.abspath(os.path.dirname(__file__))
         self.cur_path = self.cur_path + '/testmusic'
+        self.cur_path2 = self.cur_path
         self.cur_playing_song = ''
+        self.cur_playing_song2 = ''
         self.is_switching = False
         self.is_pause = True
         self.settingfilename = 'setting.ini'
@@ -113,8 +118,16 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.label1.setStyle(QStyleFactory.create('Fusion'))
         self.label2 = QLabel('00:00')
         self.label2.setStyle(QStyleFactory.create('Fusion'))
-        self.label1.setFont(QtGui.QFont("Arial", 18))
-        self.label2.setFont(QtGui.QFont("Arial", 18))
+        self.label1.setFont(QtGui.QFont("Arial", 16))
+        self.label2.setFont(QtGui.QFont("Arial", 16))
+
+        self.label3 = QLabel('MPCP')
+        self.label3.setStyle(QStyleFactory.create('Fusion'))
+        self.label3.setFont(QtGui.QFont("Arial", 16))
+
+        self.label4 = QLabel('正在计算')
+        self.label4.setStyle(QStyleFactory.create('Fusion'))
+        self.label4.setFont(QtGui.QFont("Arial", 16))
 
         # --滑动条
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -151,15 +164,14 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.qlist.setObjectName('qlist')
         self.qlist.setHorizontalScrollBarPolicy(1)
         self.qlist.setFont(QtGui.QFont("Arial", 18))
-        self.qlist.setMinimumSize(200, 200)
-
+        self.qlist.setMinimumSize(200, 100)
 
         self.qlist2 = QListWidget()
         self.qlist2.setStyle(QStyleFactory.create('Fusion'))
         self.qlist2.setObjectName('qlist2')
         self.qlist2.setHorizontalScrollBarPolicy(1)
         self.qlist2.setFont(QtGui.QFont("Arial", 18))
-        self.qlist2.setMinimumSize(200, 200)
+        self.qlist2.setMinimumSize(200, 100)
 
 
         # --如果有初始化setting, 导入setting
@@ -180,11 +192,12 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.playByMode)
 
         plt.style.use('dark_background')
-        self.figure = plt.figure()
+        self.figure = plt.figure('Object_1')
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setMinimumSize(200, 200)
 
     def Event(self):
+        self.close_btn.clicked.connect(self.waveplotclean)
         self.close_btn.clicked.connect(self.close)
         self.max_btn.clicked.connect(self.max_normal)
         self.min_btn.clicked.connect(self.showMinimized)
@@ -202,11 +215,16 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.next_button.clicked.connect(self.nextMusic)
 
         self.qlist.itemDoubleClicked.connect(self.doubleClicked)
+        self.qlist2.itemClicked.connect(self.comparison)
 
         self.open_button.clicked.connect(self.openDir)
 
         self.qlist.activated.connect(self.waveplotclean)
-        self.qlist.activated.connect(self.waveplot)
+        self.qlist.activated.connect(lambda:self.waveplot(classnum=2))
+
+        self.choose_button.clicked.connect(self.comparChoose)
+        self.choose_button.clicked.connect(self.waveplotclean)
+        self.choose_button.setEnabled(False)
 
     def layouts(self):
 
@@ -240,6 +258,8 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.r_Hbox = QtWidgets.QHBoxLayout()
         self.r_Hbox.addWidget(self.label1)
         self.r_Hbox.addWidget(self.label2)
+        self.r_Hbox.addWidget(self.label3)
+        self.r_Hbox.addWidget(self.label4)
         self.r_Hbox.addWidget(self.preview_button)
         self.r_Hbox.addWidget(self.next_button)
         self.r_Hbox.addWidget(self.cmb)
@@ -287,13 +307,13 @@ class musicPlayer(QtWidgets.QMainWindow):
             #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
             #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
 
-            #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid rgba(90,120,250,.7);}
+            #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
             #slider::sub-page:horizontal {background: #28c;}
             #cmb {background-color: black; border: None;}
             #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
             QPushButton {border-radius: 6; height: 30; border-radius: 15}
-            QPushButton:hover {background: rgba(90,120,150,.4);}
-            QPushButton:pressed {background: rgba(190,60,50,.7);}
+            QPushButton:hover {background: rgba(90,160,210,.6);}
+            QPushButton:pressed {background: orange; color: black;}
             ''')
         self.setCentralWidget(self.widget)
 
@@ -318,12 +338,15 @@ class musicPlayer(QtWidgets.QMainWindow):
             self.is_pause = True
             self.play_button.setText('播放')
 
+        self.cur_path2 = self.cur_path
+
     def loadSetting(self):
         try:
             if os.path.isfile(self.settingfilename):
                 config = configparser.ConfigParser()
                 config.read(self.settingfilename)
                 self.cur_path = config.get('MusicPlayer', 'PATH')
+                self.cur_path2 = self.cur_path
                 self.showMusicList()
         except Exception:
             # print(e)
@@ -353,13 +376,16 @@ class musicPlayer(QtWidgets.QMainWindow):
         ## list2
         self.qlist2.clear()
         self.updateSetting()
-        for song in os.listdir(self.cur_path):
+        count = 0
+        for song in os.listdir(self.cur_path2):
             if song.split('.')[-1] in self.song_formats:
-                self.songs_list.append([song, os.path.join(self.cur_path, song).replace('\\', '/')])
+                self.songs_list2.append([song, os.path.join(self.cur_path2, song).replace('\\', '/')])
                 self.qlist2.addItem(song)
+                count += 1
+                # print(song, count)
         self.qlist2.setCurrentRow(0)
-        if self.songs_list:
-            self.cur_playing_song2 = self.songs_list[self.qlist.currentRow()][-1]
+        if self.songs_list2:
+            self.cur_playing_song2 = self.songs_list2[self.qlist2.currentRow()][-1]
 
     def doubleClicked(self):
         self.slider.setValue(0)
@@ -372,6 +398,26 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.cur_playing_song = self.songs_list[self.qlist.currentRow()][-1]
         self.connect = QMediaContent(QtCore.QUrl.fromLocalFile(self.cur_playing_song))
         self.player.setMedia(self.connect)
+
+    def comparison(self):
+        self.cur_playing_song2 = self.songs_list2[self.qlist2.currentRow()][-1]
+        # print(QtCore.QUrl.fromLocalFile(self.cur_playing_song2))
+        self.choose_button.setEnabled(True)
+
+    def comparChoose(self):
+        # self.compar_signal, self.sr_compar = librosa.load(self.cur_playing_song2, offset=40)
+        self.compar_signal, self.sr_compar = librosa.load(self.cur_playing_song2)
+        self.rsr_compar = 100
+        self.re_compar = librosa.resample(self.compar_signal, self.sr_compar, self.rsr_compar)
+        self.plotshow()
+        self.calculus()
+
+    # def __getattribute__(self, name):
+    #     try:
+    #         r = object.__getattribute__(self, name)
+    #     except:
+    #         r = None
+    #     return r
 
     def Tips(self, message):
         QMessageBox.about(self, "提示", message)
@@ -439,7 +485,7 @@ class musicPlayer(QtWidgets.QMainWindow):
             self.mute_button.setText('静音')
         elif self.player.volume() > 0:
             self.player.setVolume(0)
-            self.mute_button.setText('不静音')
+            self.mute_button.setText('取消静音')
 
 
     def previewMusic(self):
@@ -466,12 +512,26 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.playMusic()
         self.is_switching = False
 
-    def waveplot(self):
+    def waveplot(self, classnum=2):
+        # a = [1, 2, 3, 4, 5, 6]
+        # b = [1, 3, 5, 7, 9, 11]
+        # if classnum == 1:
+        #     n = a
+        #     m = 1
+        # elif classnum == 2:
+        #     n = b
+        #     m = 2
+        # else:
+        #     n = a
+        #     m = 1
+
         self.axset()
-        self.audio_signal, self.sample_rate = librosa.load(self.cur_playing_song, offset=40)
+        self.gs = mg.GridSpec(6, 2)
+        # self.audio_signal, self.sample_rate = librosa.load(self.cur_playing_song, offset=40)
+        self.audio_signal, self.sample_rate = librosa.load(self.cur_playing_song)
         self.re_sample = 100
         self.re_audio = librosa.resample(self.audio_signal, self.sample_rate, self.re_sample)
-        plt.subplot(5,1,1)
+        plt.subplot(self.gs[0,:classnum])
         librosa.display.waveplot(self.re_audio, self.re_sample, linewidth=.1, max_sr=10, color='#8ef')
         plt.title('signal')
         plt.xlabel('Time')
@@ -479,9 +539,9 @@ class musicPlayer(QtWidgets.QMainWindow):
 
         self.axset()
 
-        plt.subplot(5,1,2)
+        plt.subplot(self.gs[1,:classnum])
         self.chromaCqt()
-        librosa.display.specshow(self.CQT, x_axis='time', y_axis='cqt_note')
+        librosa.display.specshow(10*self.CQT, x_axis='time', y_axis='cqt_note')
         # plt.colorbar(format='%+2.0f dB')
         plt.title('Constant-Q power spectrogram (note)')
         plt.ylabel('dB')
@@ -490,16 +550,16 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.axset()
 
 
-        plt.subplot(5,1,3)
+        plt.subplot(self.gs[2,:classnum])
 
-        librosa.display.specshow(self.chroma_cqt, y_axis='chroma', x_axis='time')
+        librosa.display.specshow(self.chroma_cqt ** 3, y_axis='chroma', x_axis='time')
         plt.title('chroma_cqt')
         # plt.colorbar()
         plt.tight_layout()
 
         self.axset()
 
-        plt.subplot(5,1,4)
+        plt.subplot(self.gs[3,:classnum])
         plt.bar(np.arange(len(self.chroma_cqt_bar_normalized)), self.chroma_cqt_bar_normalized, color='#6ac', alpha=1)
         plt.xticks(range(12), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'])
         plt.xlabel('Pitch class')
@@ -509,10 +569,10 @@ class musicPlayer(QtWidgets.QMainWindow):
 
         self.axset()
 
-        plt.subplot(5,1,5)
+        plt.subplot(self.gs[4,:classnum])
         S = librosa.feature.melspectrogram(y=self.audio_signal, sr=self.sample_rate, n_mels=12, fmax=8000)
-        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(S))
-        librosa.display.specshow(mfccs, x_axis='time', y_axis='mel')
+        self.mfccs = librosa.feature.mfcc(S=librosa.power_to_db(S))
+        librosa.display.specshow(12 * self.mfccs ** 1.2, x_axis='time', y_axis='mel')
         plt.title('MFCC')
         plt.tight_layout()
 
@@ -522,7 +582,9 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.canvas.draw()
 
     def waveplotclean(self):
-        plt.cla()
+        # plt.cla()
+        plt.clf()
+        # plt.close()
 
     def axset(self):
         plt.rc('font', size=5)
@@ -546,11 +608,219 @@ class musicPlayer(QtWidgets.QMainWindow):
 
         # print(self.chroma_cqt.shape)
 
-        self.chroma_cqt_bar = self.chroma_cqt.mean(axis=1)
+        self.chroma_cqt_bar = self.chroma_cqt.mean(axis=1) ** 3
         self.chroma_cqt_bar_normalized = self.chroma_cqt_bar * (1 / max(self.chroma_cqt_bar))
 
 
+    def plotshow(self):
+        plt.clf()
+        self.axset()
+        self.waveplot(classnum=1)
 
+        plt.subplot(self.gs[0,1:])
+        librosa.display.waveplot(self.re_compar, self.rsr_compar, linewidth=.1, max_sr=10, color='orange')
+        plt.title('signal')
+        plt.xlabel('Time')
+        plt.ylabel('Amplitude')
+
+        self.axset()
+
+        plt.subplot(self.gs[1,1:])
+        self.chromaCqt2()
+        librosa.display.specshow(10*self.CQT2, x_axis='time', y_axis='cqt_note')
+        # plt.colorbar(format='%+2.0f dB')
+        plt.title('Constant-Q power spectrogram (note)')
+        plt.ylabel('dB')
+        plt.set_cmap('bone')
+
+        self.axset()
+
+        plt.subplot(self.gs[2,1:])
+
+        librosa.display.specshow(self.chroma_cqt2 ** 3, y_axis='chroma', x_axis='time')
+        plt.title('chroma_cqt')
+        # plt.colorbar()
+        plt.tight_layout()
+
+        self.axset()
+
+        plt.subplot(self.gs[3,1:])
+        plt.bar(np.arange(len(self.chroma_cqt_bar_normalized2)), self.chroma_cqt_bar_normalized2, color='orange', alpha=1)
+        plt.xticks(range(12), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'])
+        plt.xlabel('Pitch class')
+        plt.yticks(np.arange(11)/10)
+        plt.ylabel('Relative energy')
+        plt.title('PCP feature vector extracted')
+
+        self.axset()
+
+        plt.subplot(self.gs[4,1:])
+        S2 = librosa.feature.melspectrogram(y=self.compar_signal, sr=self.sr_compar, n_mels=12, fmax=8000)
+        self.mfccs2 = librosa.feature.mfcc(S=librosa.power_to_db(S2))
+        librosa.display.specshow(12 * self.mfccs2 ** 1.2, x_axis='time', y_axis='mel')
+        plt.title('MFCC')
+        plt.tight_layout()
+
+        self.axset()
+
+        self.canvas.draw()
+
+    def chromaCqt2(self):
+        self.CQT2 = librosa.amplitude_to_db(np.abs(librosa.cqt(self.compar_signal, self.sr_compar)), ref=np.max)
+
+        self.chroma_cqt2 = librosa.feature.chroma_cqt(y=self.compar_signal, sr=self.sr_compar, C=None, hop_length=512, fmin=None, #~=32.7 'C1' \
+            norm=np.inf, threshold=0.0, tuning=None, n_chroma=12, n_octaves=7,
+            window=scipy.signal.windows.hamming(1),
+            bins_per_octave=None,
+            cqt_mode='full')
+
+        # print(self.chroma_cqt.shape)
+
+        self.chroma_cqt_bar2 = self.chroma_cqt2.mean(axis=1) ** 3
+        self.chroma_cqt_bar_normalized2 = self.chroma_cqt_bar2 * (1 / max(self.chroma_cqt_bar2))
+
+    def calculus(self):
+        # print(self.chroma_cqt.shape)
+        # print(self.mfccs2.shape)
+        # print(self.mfccs.shape)
+        # print(self.mfccs2.shape)
+        MPCP1 = np.concatenate([self.mfccs, self.chroma_cqt], axis=0)
+        MPCP2 = np.concatenate([self.mfccs2, self.chroma_cqt2], axis=0)
+        print(MPCP1.shape)
+        print(MPCP2.shape)
+        if MPCP1.shape[1] > MPCP2.shape[1]:
+            Z = np.zeros((24, MPCP1.shape[1] - MPCP2.shape[1]))
+            newMPCP = np.column_stack((MPCP2, Z))
+            # print('第一种情况', MPCP1.shape, newMPCP.shape)
+            self.MPCP_1 = MPCP1
+            self.MPCP_2 = newMPCP
+        elif MPCP1.shape[1] < MPCP2.shape[1]:
+            Z = np.zeros((24, MPCP2.shape[1] - MPCP1.shape[1]))
+            newMPCP = np.column_stack((MPCP1, Z))
+            # print('第二种情况', newMPCP.shape, MPCP2.shape)
+            self.MPCP_1 = newMPCP
+            self.MPCP_2 = MPCP2
+        else:
+            self.MPCP_1 = MPCP1
+            self.MPCP_2 = MPCP2
+
+        self.cosineSimilarityVector = np.zeros((self.MPCP_1.shape[0],))
+        for i in range(0, self.MPCP_1.shape[0]):
+            sumcount = 0
+            Xsum = 0
+            Ysum = 0
+            for j in range(0, self.MPCP_1.shape[1]):
+                sumij = self.MPCP_1[i][j] * self.MPCP_2[i][j]
+                sumcount = sumcount + sumij
+
+                XsumCount = self.MPCP_1[i][j] ** 2
+                Xsum = Xsum + XsumCount
+                YsumCount = self.MPCP_2[i][j] ** 2
+                Ysum = Ysum + YsumCount
+
+
+            self.cosineSimilarityVector[i] = sumcount / (math.sqrt(Xsum) * math.sqrt(Ysum))
+
+        self.totalMean = np.mean(self.cosineSimilarityVector)
+        self.PCPFeatureMean = np.mean(self.cosineSimilarityVector[:12])
+        self.MFCCFeatureMean = np.mean(self.cosineSimilarityVector[12:])
+
+        print('特征相似度向量：', self.cosineSimilarityVector)
+        print('特征相似度向量 Shape：', self.cosineSimilarityVector.shape)
+        print('总相似度 (MPCP)：', self.totalMean,
+            'PCP 特征相似度', self.PCPFeatureMean,
+            'MFCC 特征相似度', self.MFCCFeatureMean)
+
+
+        self.label3.setText('MPCP: %f-' % (self.totalMean,))
+        self.label3.setObjectName('MPCP')
+        self.label4.setObjectName('Result')
+        if self.totalMean >= 0.6:
+            self.label4.setText('鉴定结果: 翻唱作品')
+            self.setStyleSheet('''
+                #mainwindow {background: black; border-radius: 6;}
+                #widget {background: black; border-radius: 5; border: 1 solid rgba(90,120,150,.4);}
+                #close {background: rgb(255, 12, 12); border-radius: 6;}
+                #close:hover {background: rgb(255, 60, 60)}
+                #max {background-color: rgb(28, 255, 3); border-radius: 6;}
+                #max:hover {background-color: rgb(128, 255, 30);}
+                #min {background-color: rgb(255, 243, 75); border-radius: 6;}
+                #min:hover {background-color: rgb(255, 243, 175);}
+                #titlebar {border-radius: 6; padding: 0;}
+                #qlist {background: black; color: darkgray;}
+                #qlist * {background: black; border-radius: 4;}
+                #qlist::Item:hover {background: #568; color: orange; border-radius: 10;}
+                #qlist::item:selected{background: #268; color: yellow; border-radius: 10;}
+
+                #qlist2 {background: black; color: darkgray;}
+                #qlist2 * {background: black; border-radius: 4;}
+                #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
+                #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
+
+                #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
+                #slider::sub-page:horizontal {background: #28c;}
+                #cmb {background-color: black; border: None;}
+                #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
+                QPushButton {border-radius: 6; height: 30; border-radius: 15}
+                QPushButton:hover {background: rgba(90,160,210,.6);}
+                QPushButton:pressed {background: orange; color: black;}
+                #MPCP {color: green;}
+                #Result {color: green}
+                ''')
+        else:
+            self.label4.setText('鉴定结果: 不相关作品')
+            self.setStyleSheet('''
+                #mainwindow {background: black; border-radius: 6;}
+                #widget {background: black; border-radius: 5; border: 1 solid rgba(90,120,150,.4);}
+                #close {background: rgb(255, 12, 12); border-radius: 6;}
+                #close:hover {background: rgb(255, 60, 60)}
+                #max {background-color: rgb(28, 255, 3); border-radius: 6;}
+                #max:hover {background-color: rgb(128, 255, 30);}
+                #min {background-color: rgb(255, 243, 75); border-radius: 6;}
+                #min:hover {background-color: rgb(255, 243, 175);}
+                #titlebar {border-radius: 6; padding: 0;}
+                #qlist {background: black; color: darkgray;}
+                #qlist * {background: black; border-radius: 4;}
+                #qlist::Item:hover {background: #568; color: orange; border-radius: 10;}
+                #qlist::item:selected{background: #268; color: yellow; border-radius: 10;}
+
+                #qlist2 {background: black; color: darkgray;}
+                #qlist2 * {background: black; border-radius: 4;}
+                #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
+                #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
+
+                #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
+                #slider::sub-page:horizontal {background: #28c;}
+                #cmb {background-color: black; border: None;}
+                #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
+                QPushButton {border-radius: 6; height: 30; border-radius: 15}
+                QPushButton:hover {background: rgba(90,160,210,.6);}
+                QPushButton:pressed {background: orange; color: black;}
+                #MPCP {color: red;}
+                #Result {color: red}
+                ''')
+
+        self.axset()
+        x = np.arange(0, self.cosineSimilarityVector.shape[0])
+        plt.subplot(self.gs[5,:])
+        plt.plot(x, self.cosineSimilarityVector, color='orange', marker='o', markersize=4, alpha=0.5)
+        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector >= 0, facecolor='green', interpolate=True, alpha=0.7)
+        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector <= 0, facecolor='red', interpolate=True, alpha=0.7)
+
+        plt.xlim([0, 24])
+        plt.ylim([-1.5, 1.5])
+
+        plt.xticks(range(24), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Freq1', 'Freq2', 'Freq3', 'Freq4', 'Freq5', 'Freq6', 'Freq7', 'Freq8', 'Freq9', 'Freq10', 'Freq11', 'Freq12'])
+        plt.xlabel('Feature class')
+        plt.yticks(np.arange(11)/10)
+        plt.ylabel('Similarity')
+
+        plt.title('FeatureSimilarityVector')
+        plt.tight_layout()
+
+        self.axset()
+
+        self.canvas.draw()
 
 
 if __name__ == '__main__':
