@@ -34,7 +34,9 @@ class musicPlayer(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(musicPlayer, self).__init__(*args, **kwargs)
         self.setObjectName("mainwindow")
-        self.setWindowFlags(Qt.FramelessWindowHint)
+
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowCloseButtonHint)
+        # self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setWindowOpacity(0.8)
         # self.setMouseTracking(True)
@@ -45,7 +47,7 @@ class musicPlayer(QtWidgets.QMainWindow):
         self._padding = 0
         self.setWindowTitle('音乐音频处理')
         self.setWindowIcon(QtGui.QIcon('web.png'))
-        self.setMinimumSize(1600, 1200)
+        self.setMinimumSize(1000, 1400)
         # self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.player = QMediaPlayer()
         self.player.setVolume(20.0)
@@ -72,6 +74,46 @@ class musicPlayer(QtWidgets.QMainWindow):
         cp = QtWidgets.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
+    # 移动窗口 #
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.m_flag = True
+            self.m_Position = event.globalPos() - self.pos()  # 获取鼠标相对窗口的位置
+            event.accept()
+            self.setCursor(QCursor(Qt.OpenHandCursor))  # 更改鼠标图标
+
+    def mouseMoveEvent(self, QMouseEvent):
+        if Qt.LeftButton and self.m_flag:
+            self.move(QMouseEvent.globalPos() - self.m_Position)  # 更改窗口位置
+            QMouseEvent.accept()
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.m_flag = False
+        self.setCursor(QCursor(Qt.ArrowCursor))
+    # 移动窗口 #
+
+    @pyqtSlot()
+    def on_pushButton_max_clicked(self):
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+            # self.setWindowState(Qt.WindowMaximized)
+
+    @pyqtSlot()
+    def on_pushButton_min_clicked(self):
+        # self.showMinimized()
+        # self.setWindowState(Qt.WindowMinimized)
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMinimized()
+            self.showNormal()
+
+    @pyqtSlot()
+    def on_pushButton_close_clicked(self):
+        self.close()
 
 
     def widgets(self):
@@ -118,16 +160,16 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.label1.setStyle(QStyleFactory.create('Fusion'))
         self.label2 = QLabel('00:00')
         self.label2.setStyle(QStyleFactory.create('Fusion'))
-        self.label1.setFont(QtGui.QFont("Arial", 16))
-        self.label2.setFont(QtGui.QFont("Arial", 16))
+        self.label1.setFont(QtGui.QFont("Arial", 14))
+        self.label2.setFont(QtGui.QFont("Arial", 14))
 
         self.label3 = QLabel('MPCP')
         self.label3.setStyle(QStyleFactory.create('Fusion'))
-        self.label3.setFont(QtGui.QFont("Arial", 16))
+        self.label3.setFont(QtGui.QFont("Arial", 14))
 
         self.label4 = QLabel('正在计算')
         self.label4.setStyle(QStyleFactory.create('Fusion'))
-        self.label4.setFont(QtGui.QFont("Arial", 16))
+        self.label4.setFont(QtGui.QFont("Arial", 14))
 
         # --滑动条
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -164,14 +206,14 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.qlist.setObjectName('qlist')
         self.qlist.setHorizontalScrollBarPolicy(1)
         self.qlist.setFont(QtGui.QFont("Arial", 18))
-        self.qlist.setMinimumSize(200, 100)
+        self.qlist.setMinimumSize(200, 200)
 
         self.qlist2 = QListWidget()
         self.qlist2.setStyle(QStyleFactory.create('Fusion'))
         self.qlist2.setObjectName('qlist2')
         self.qlist2.setHorizontalScrollBarPolicy(1)
         self.qlist2.setFont(QtGui.QFont("Arial", 18))
-        self.qlist2.setMinimumSize(200, 100)
+        self.qlist2.setMinimumSize(200, 200)
 
 
         # --如果有初始化setting, 导入setting
@@ -198,9 +240,9 @@ class musicPlayer(QtWidgets.QMainWindow):
 
     def Event(self):
         self.close_btn.clicked.connect(self.waveplotclean)
-        self.close_btn.clicked.connect(self.close)
-        self.max_btn.clicked.connect(self.max_normal)
-        self.min_btn.clicked.connect(self.showMinimized)
+        self.close_btn.clicked.connect(self.on_pushButton_close_clicked)
+        self.min_btn.clicked.connect(self.on_pushButton_min_clicked)
+        self.max_btn.clicked.connect(self.on_pushButton_max_clicked)
 
         self.slider.sliderMoved[int].connect(
             lambda: self.player.setPosition(self.slider.value()))
@@ -319,12 +361,6 @@ class musicPlayer(QtWidgets.QMainWindow):
 
     def menubar(self):
         self.menubar = self.menuBar()
-
-    def max_normal(self):
-        print('successfully!')
-
-    def showMinimized(self):
-        print('successfully!')
 
     def openDir(self):
         self.cur_path = QFileDialog.getExistingDirectory(self, "选取文件夹", self.cur_path)
@@ -804,13 +840,14 @@ class musicPlayer(QtWidgets.QMainWindow):
         x = np.arange(0, self.cosineSimilarityVector.shape[0])
         plt.subplot(self.gs[5,:])
         plt.plot(x, self.cosineSimilarityVector, color='orange', marker='o', markersize=4, alpha=0.5)
-        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector >= 0, facecolor='green', interpolate=True, alpha=0.7)
-        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector <= 0, facecolor='red', interpolate=True, alpha=0.7)
+        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector >= 0.5, facecolor='green', interpolate=True, alpha=0.7)
+        plt.fill_between(x, self.cosineSimilarityVector, 0, where=self.cosineSimilarityVector < 0.5, facecolor='red', interpolate=True, alpha=0.7)
 
-        plt.xlim([0, 24])
-        plt.ylim([-1.5, 1.5])
+        plt.xlim([0, 12])
+        plt.ylim([-0.3, 1.2])
 
-        plt.xticks(range(24), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Freq1', 'Freq2', 'Freq3', 'Freq4', 'Freq5', 'Freq6', 'Freq7', 'Freq8', 'Freq9', 'Freq10', 'Freq11', 'Freq12'])
+        # plt.xticks(range(24), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Freq1', 'Freq2', 'Freq3', 'Freq4', 'Freq5', 'Freq6', 'Freq7', 'Freq8', 'Freq9', 'Freq10', 'Freq11', 'Freq12'])
+        plt.xticks(range(12), ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'])
         plt.xlabel('Feature class')
         plt.yticks(np.arange(11)/10)
         plt.ylabel('Similarity')
