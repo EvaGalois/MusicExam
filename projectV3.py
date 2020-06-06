@@ -206,14 +206,14 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.qlist.setObjectName('qlist')
         self.qlist.setHorizontalScrollBarPolicy(1)
         self.qlist.setFont(QtGui.QFont("Arial", 16))
-        self.qlist.setMinimumSize(200, 120)
+        self.qlist.setMinimumSize(200, 100)
 
         self.qlist2 = QListWidget()
         self.qlist2.setStyle(QStyleFactory.create('Fusion'))
         self.qlist2.setObjectName('qlist2')
         self.qlist2.setHorizontalScrollBarPolicy(1)
         self.qlist2.setFont(QtGui.QFont("Arial", 16))
-        self.qlist2.setMinimumSize(200, 120)
+        self.qlist2.setMinimumSize(200, 100)
 
 
         # --如果有初始化setting, 导入setting
@@ -236,7 +236,7 @@ class musicPlayer(QtWidgets.QMainWindow):
         plt.style.use('dark_background')
         self.figure = plt.figure('Object_1')
         self.canvas = FigureCanvas(self.figure)
-        self.canvas.setMinimumSize(200, 200)
+        self.canvas.setMinimumSize(800, 750)
 
     def Event(self):
         self.close_btn.clicked.connect(self.waveplotclean)
@@ -300,6 +300,7 @@ class musicPlayer(QtWidgets.QMainWindow):
         self.listbox.addWidget(self.qlist)
         self.listbox.addWidget(self.qlist2)
         self.listbar.setLayout(self.listbox)
+        self.listbar.setMaximumHeight(100)
 
         self.bottom_widget = QtWidgets.QWidget()
         self.r_Hbox = QtWidgets.QHBoxLayout()
@@ -354,7 +355,7 @@ class musicPlayer(QtWidgets.QMainWindow):
             #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
             #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
 
-            #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
+            #slider::handle:horizontal:hover {background: #68c; border-radius: 7; border: 1 solid orange;}
             #slider::sub-page:horizontal {background: #28c;}
             #cmb {background-color: black; border: None;}
             #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
@@ -886,7 +887,7 @@ class musicPlayer(QtWidgets.QMainWindow):
                 #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
                 #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
 
-                #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
+                #slider::handle:horizontal:hover {background: #68c; border-radius: 7; border: 1 solid orange;}
                 #slider::sub-page:horizontal {background: #28c;}
                 #cmb {background-color: black; border: None;}
                 #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
@@ -919,7 +920,7 @@ class musicPlayer(QtWidgets.QMainWindow):
                 #qlist2::Item:hover {background: #568; color: orange; border-radius: 10;}
                 #qlist2::item:selected{background: #268; color: yellow; border-radius: 10;}
 
-                #slider::handle:horizontal {background: #68c; border-radius: 7; border: 2 solid orange;}
+                #slider::handle:horizontal:hover {background: #68c; border-radius: 7; border: 1 solid orange;}
                 #slider::sub-page:horizontal {background: #28c;}
                 #cmb {background-color: black; border: None;}
                 #cmb * {background-color: black; border: 1 solid rgba(90,120,150,.4);}
